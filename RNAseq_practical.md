@@ -55,7 +55,7 @@ If you have a good quality genome and genome annotation such as for human, model
 
 New tools for mapping sequence reads are continually being developed. This reflects improvements in mapping technology, but it is also due to changes in the sequence data to be mapped. The sequencing machines we are using now will perhaps not be the ones we are using in a few years time, and the data the new machines produce may require different set of tools but some key concepts will remain relevant.
 
-### Demo: RNA-seq read mapping
+## Demo: RNA-seq read mapping
 #### Experiment description
 We will use data of S. mansoni from experimentally-infected mice that were collected at different time post-infection. These are worms from the lung stage (day 6 after the infection), the liver stage (day 13, 17, 21 after infection), and the adult stage (day 28 when they look like adults, and day 35 when the egg-laying has started and liver pathology can be noticable). Most groups have three biological replicates, except for the lung stage (day-6) where there are 7 biological replicates. Therefore we have 22 RNA samples, each has been sequenced on an Illumina HiSeq sequencing machine. All were sequenced as paired-end. 
 
@@ -76,7 +76,7 @@ These steps will be done as a demo in the recorded clip.
 
 ```bash 
 # Go to the location of the reference genome
-cd /<path/to/my/data>/MappingDemo/References_v5/
+cd /<path/to/my/data>/References_v5/
 
 # Unzip the reference genome file
 gunzip Sm_v5_genome.fa.gz
