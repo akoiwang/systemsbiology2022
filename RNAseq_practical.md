@@ -1,4 +1,4 @@
-# Transcriptomics
+# Next-generation sequencing data analysis - RNA-seq example
 
 ## Table of Contents
 1. [Overview and Aims](#intro)
@@ -14,10 +14,12 @@
 ---
 
 ## Overview and Aims <a name="intro"></a>
-In this module, we will cover key concepts in RNA-seq transcriptome experimental design and data analysis. We will start from raw data and work toward analysis of differentially expressed genes and functional analysis of gene lists. The example we will use come from Schistosoma mansoni which we have a good reference genome for (and downloadable from Wormbase Parasite). We will use data of S. mansoni from experimentally-infected mice that were collected at different time post-infection. We could ask if and how the worms at different stages are transcriptionally different and how those differences are related, or surprising, given the nature of the worms.
+In this practical, We will start from raw data and work toward analysis of differentially expressed genes and functional analysis of gene lists. The example we will use come from Schistosoma mansoni which we have a good reference genome for (and downloadable from [Wormbase Parasite](https://parasite.wormbase.org/index.html), a favourite database for those working on parasitic worms. Note: if you work on human you may be interested in the [Ensembl](https://asia.ensembl.org/Homo_sapiens/Info/Index), or [Ensembl Bacteria](https://bacteria.ensembl.org/index.html)). 
 
-At the end of this module, and the follow-up project module, you will have hands-on experience in
-- mapping RNA-seq data to reference genome
+We will use data of S. mansoni from experimentally-infected mice that were collected at different days post-infection. We could ask if and how the worms at different stages are transcriptionally different and how those differences are related, or surprising, given the nature of the worms.
+
+At the end of this practical, you will have some experience in
+- mapping RNA-seq data to reference genome (I will demo this for you because the real process will take about 8 hours to complete, for just one sample.)
 - acquiring read counting results and import them to R
 - visualising transcriptomic profiles in R
 - using R packages to identify differentially expressed genes and finding patterns in the data
@@ -26,69 +28,11 @@ At the end of this module, and the follow-up project module, you will have hands
 ---
 [↥ **Back to top**](#top)
 
-## Introduction to transcriptome and experiment design <a name="basic"></a>
-Understanding when each gene is used helps us to investigate how organisms develop and which genes are used in response to particular external stimuli. The first layer in understanding how the genome is used is the transcriptome. This is also the most accessible because like the genome the transcriptome is made of nucleic acids and can be sequenced using the same technology. Arguably the proteome and metabolome is of greater relevance to understanding cellular biology however it is chemically heterogeneous making it much more difficult to assay.
-
-Over the past decade or two microarray technology has been extensively applied to addressing the question of which genes are expressed when. Despite its success this technology is limited in that it requires prior knowledge of the gene sequences for an organism and has a limited dynamic range in detecting the level of expression, e.g. how many copies of a transcript are made. RNA sequencing technology, using for instance Sequencing-by-Synthesis method, can sequence essentially all the genes which are transcribed including the unknown RNAs.
-
-One of the most common uses of transcriptomic data is possibly for differential gene expression study, which will be covered in this course. However, the extensive and high-throughput nature of the transcriptomic data means there are other potential usages. For example, it can be used to profile total RNA (e.g. miRNA and mRNA) in exosomes and other secretory products; help identify different splice isoforms; provide evidence for gene annotation and improve quality of reference genomes. Meta-transcriptome (combining and re-analysing pool of transcriptomics data from multiple experiments), and comparative gene expression between species could be seen as an extension of differential gene expression. Furthermore, genetic variation particularly SNP calling could use information from transcriptomics data which would carry SNPs from transcribed genes.  
-
-### Designing a transcriptome experiment: things to consider
-#### Replicates and power
-In order to accurately ascertain which genes are differentially expressed and by how much it is necessary to use replicated data. As with all biological experiments doing it once is simply not enough. There is no simple way to decide how many replicates to do, it is usually a compromise of statistical power and cost. By determining how much variability there is in the sample preparation and sequencing reactions we can better assess how highly genes are really expressed and more accurately determine any differences. The key to this is performing biological rather than technical replicates.
-
-_Technical replicates: random noise from protocols or equipment_
-* multiple measurement from the same biological sample e.g. sequencing the same library on multiple lanes, same sample is sequenced multiple times
-* do not account for the variability that really exists in biological systems or the experimental error between batches of parasites
-* The noise from technical variation is often quite low
-
-_Biological replicates: “true” biological variation_
-* From independent and distinct individual/cells/experiments e.g. growing up three batches of parasites, treating them all identically, extracting RNA from each and sequencing the three samples separately, cells that are grown separately, individual plant
-
-_How many replicates to do?_
-* The number of replicate affect statistical power in identifying DE genes
-* More replicates will help improve power for genes that are already detected at high levels, while deeper sequencing will improve power to detect differential expression for genes which are expressed at low levels.
-* For differential expression analysis, most published RNA-seq papers use 3 replicates
-* However, some studies suggest at least 6 replicates, and that 12 replicates would allow reliable detection of lowly expressed genes or genes with small changes between conditions 
-* If your are able to choose, go for more replicates rather than high number of reads
-
-More discussion on replicates: http://chagall.med.cornell.edu/RNASEQcourse/Intro2RNAseq.pdf 
-
-#### Numbers of reads
-The table below shows general recommendation according to Genohub, but real usage can vary depending on your needs. You may recall from the Genetic Diversity module that reduced number of reads, in some cases, can still provide information about genetic variations. If the differences between groups are big, then you may still see the differences even when your have a low number of reads. If the differences are small, however, those small differences may get lost amongst the noises and sample-to-sample variations, such that you will need a higher number of reads to see the biological signals. (For more details, refer to: https://genohub.com/next-generation-sequencing-guide/#depth2)
-
-|Sample type|Reads recommended for differential expression (millions)|Reads recommended for rare transcript or de novo assembly (millions)|
-|------|------|------|
-|Small genomes (e.g. bacteria, fungi)|5|30-65|
-|Intermediate genomes (e.g. Drosophila, C. elegans, most helminths)|10|70-130|
-|Large genomes (e.g. human, mouse)|15-25|100-200|
-
-#### Controls and other confounding factors
-Although transcriptomes have so much potential, interpretation of its results still relies on good experimental design; therefore, In the same way as any good experimental design, always think about you “control” samples and consider any confounding factors.
-
-Samples are often processed in batch, or if you have many samples or require large amount of output data, they may need to be sequenced on multiple lanes. For this, think about a way to group samples to minimise “batch effect”. See diagram below: 
-
-
-![](figures/AvoidingBatchEffect.png)  
-**Figure 1.** Avoiding batch effect
-
-#### Strand-specificity
-Some of the current protocols for preparing RNA-sequencing libraries can retain information on the strand which the RNA have come from. The strand information, in addition to sequences, could be particularly useful if researchers are interested in non-coding RNA, or if the organisms under study is known to have genes overlapping on the opposite strand. 
-
-#### Single-end or paired-end sequencing
-In single-end sequencing, each fragment is sequenced from only one end. In paired-end sequencing, the sequencing is done on both ends of the fragment, providing information on relative positions of each pair of sequencing reads. Single-end sequencing is faster to obtain as well as more economical, and it can be a good choice for sequencing of small RNA, or chromatin immunoprecipitation sequencing (ChIP-Seq).
-
-Paired-end data could enable more accurate read mapping (alignment) to the genome, and it is particularly useful for detecting genomic rearrangements, insertion-deletion (indel), identify splice isoforms, or work with repetitive sequence elements
-
----
-[↥ **Back to top**](#top)
-
-
 ## Mapping RNA-seq reads to a reference genome <a name="mapping"></a>
-After the experiment has been conducted, RNA extracted, and proceeded to sequencing, each of the sequences obtained is called “read”. The sequences (or reads) often come back as a FASTQ file which could be many gigabytes in size, and this is essentially our raw data for the transcriptome analysis. The very first thing we could do with the data is to QC it, as we have done for the Genetic Diversity module. Then, we map it to the genome and, for gene expression analysis, count the number of reads that map to individual gene locations. 
+After the experiment has been conducted, RNA extracted, and proceeded to sequencing, each of the sequences obtained is called “read”. The sequences (or reads) often come back as a FASTQ file which could be many gigabytes in size, and this is essentially our raw data for the transcriptome analysis. The very first thing we could do with the data is to QC it (using tools such as `fastqc`. If you send your samples to a company for sequencing, this QC result is often provided.). Then, we map it to the genome and, for gene expression analysis, count the number of reads that map to individual gene locations. 
 
 ### Key aspects of RNA-seq mapping and counting
-Mapping is a relatively simple step, and below are information that may become helpful when choosing tools and parameters during your read mapping.
+Mapping is a relatively straightforward step, and below are information that may become helpful when choosing tools and parameters during your read mapping.
 
 #### Spliced mapping
 Eukaryotic mRNAs are processed after transcription; introns are spliced out. Therefore some reads (those crossing exon boundaries) should be split when mapped to the reference genome sequence in which intron sequences are still present. TopHat and HISAT2 are one of few mappers which can split reads while mapping them, making it very suitable for mapping RNA-seq of a eukaryote. Splice-aware mapper first identify reads that map within a single exon and then identify splice junction on unmapped reads and map them across exon boundaries.
@@ -111,12 +55,12 @@ If you have a good quality genome and genome annotation such as for human, model
 
 New tools for mapping sequence reads are continually being developed. This reflects improvements in mapping technology, but it is also due to changes in the sequence data to be mapped. The sequencing machines we are using now will perhaps not be the ones we are using in a few years time, and the data the new machines produce may require different set of tools but some key concepts will remain relevant.
 
-### Hands on: RNA-seq read mapping
+### Demo: RNA-seq read mapping
 #### Experiment description
 We will use data of S. mansoni from experimentally-infected mice that were collected at different time post-infection. These are worms from the lung stage (day 6 after the infection), the liver stage (day 13, 17, 21 after infection), and the adult stage (day 28 when they look like adults, and day 35 when the egg-laying has started and liver pathology can be noticable). Most groups have three biological replicates, except for the lung stage (day-6) where there are 7 biological replicates. Therefore we have 22 RNA samples, each has been sequenced on an Illumina HiSeq sequencing machine. All were sequenced as paired-end. 
 
 #### Mapping
-Mapping step generally need a huge computing power and often done on computer cluster or on Cloud. It can take a couple of hours per sample; therefore, for this demonstration, we provide files with reduced number of reads to reduce the processing time but you will still see how the run look like. We then provide output from the mapping that use full dataset and we can use this for the differential expression analysis later this afternoon. 
+Mapping step generally need a huge computing power and often done on computer cluster or on Cloud. It can take a couple of hours per sample; therefore, for this demonstration, we provide files with reduced number of reads to reduce the processing time but you will still see how the run look like. We then provide output from the mapping that use the full dataset for the differential expression analysis in R. 
 
 First, we will use HISAT2 (PMID: 25751142) to map RNA-seq data (in FASTQ format) to genome data (in FASTA format). HISAT2 is a mapper tool and is an upgraded software from the developer of TopHat. It is suitable for RNA-seq data as it also takes into account the splicing of exon-intron which is a characteristic of eukaryotic mRNA. 
 
@@ -126,19 +70,13 @@ First, we will use HISAT2 (PMID: 25751142) to map RNA-seq data (in FASTQ format)
 ![](figures/fasta.png)  
 **Figure 4.** FASTA file
 
-**Note:** For RNA-seq we can often get away without trimming reads before the mapping step. This is because contaminated reads or reads with low-quality would also have low mapping score and will be excluded during the read counting step. However, if the number of mapped reads or mapping results seem off, you may want to look at QC of the raw read data to figure out where things might have gone wrong. 
+**Note:** For RNA-seq we can often get away without trimming reads before the mapping step. This is because contaminated reads or reads with low-quality would also have low mapping score and will be excluded during the read counting step. 
 
-Use the following command on your Terminal window.
-
-⭐ **Information inside pointy brackets `<>` need to be changed to fit your computer setting**
-
-🚩 **if you see `<some text>` just copy-paste will not work**
-
-🚩 **Remember to use TAB for auto-completion**
+These steps will be done as a demo in the recorded clip. 
 
 ```bash 
 # Go to the location of the reference genome
-cd /<path/to/data>/Module_7_Transcriptomics/References_v5/
+cd /<path/to/my/data>/MappingDemo/References_v5/
 
 # Unzip the reference genome file
 gunzip Sm_v5_genome.fa.gz
@@ -158,8 +96,7 @@ cd Mapping
 ```
 
 Now we will map RNA-seq data to the reference genome using HISAT2. 
-As mentioned before, the RNA-seq data for our experiment have been mapped for you separately, this part is only for practicing purpose.
-Try `hisat2 --help` to find out what the additional arguments mean.
+As mentioned before, the RNA-seq data for our experiment have been mapped for you separately, this part is only for demonstration purpose.
 ```bash
 # For RNA-seq that come from single-end sequencing
 hisat2 --max-intronlen 40000 -x ../References_v5/Sm_v5_genome.hisat2idx -q ../RNAseq_data/Sm_SE.fastq -S Sm_SE.sam
@@ -169,13 +106,10 @@ hisat2 --max-intronlen 40000 -x ../References_v5/Sm_v5_genome.hisat2idx -q ../RN
 hisat2 --max-intronlen 40000 -x ../References_v5/Sm_v5_genome.hisat2idx -1 ../RNAseq_data/Sm_PE_1.fastq -2 ../RNAseq_data/Sm_PE_2.fastq -S Sm_PE.sam
 ```
 
-The **alignment rate** will be shown on the screen. What do you think about the alignment rate of this mapping? 
-In which scenerio might you get a low alignment rate? 
-
 The mapping output a SAM file which contain information of the mapping location and scores. 
 We will convert SAM file to BAM file, a binary sibling which take less space on a disk and allow faster processing time for the next step (sorting).
 ```bash
-# Convert SAM to BAM using samtools
+# Convert SAM to BAM using `samtools` - note that in new versions of `samtools`, the script might look slightly different.
 samtools view -bS -o Sm_SE.bam Sm_SE.sam
 samtools view -bS -o Sm_PE.bam Sm_PE.sam
 
@@ -186,17 +120,6 @@ ls -lth
 samtools sort -n -O BAM -o Sm_SE_sorted.bam Sm_SE.bam
 samtools sort -n -O BAM -o Sm_PE_sorted.bam Sm_PE.bam
 ```
----
-### Exercise 7.1
-Now that SAM files have been converted to BAM, the SAM are no longer useful and they take up a lot of space. Use Unix commands to:
-
-1) List all SAM files in the current directory
-
-2) Remove all SAM files *Make sure you do not accidentally delete BAM files; they are needed for the next step!*
-
----
-[↥ **Back to top**](#top)
-
 
 ## Counting the number of reads mapped to each gene <a name="readcount"></a> 
 Now we have output from the mapping as BAM file. This explains where on the genome do each of the sequencing reads mapped to. Next we can combine this information with a file that says which location on the genome is what genes, a GFF or GTF file. HTSeq (PMID: 25260700) is a popular tool for this purpose.
@@ -222,13 +145,9 @@ ls  # now the file Sm_v5_canonical_geneset.gtf.gz should become Sm_v5_canonical_
 cd ../Mapping/
 
 # Run htseq-count
-# htseq-count <various options> <sorted BAM file> <GTF or GFF file with gene annotation>
 # For Sm_PE_sorted.bam file
 # The > means 'take the screen output to this file'
 htseq-count -a 30 -t CDS -i gene_id -s yes -m union Sm_PE_sorted.bam ../References_v5/Sm_v5_canonical_geneset.gtf > Sm_PE_htseqcount.txt
-
-# Now try it yourself for the Sm_SE_sorted.bam file
-?????
 
 # Explore one of the HTSeq-count output files
 # Use up-down arrows to move long the files, or press the spacebar or D to move down a page, press B to move up a page
@@ -247,20 +166,16 @@ grep "^Smp" Sm_PE_htseqcount.txt
 # That output way too much stuff on the screen, try `head` command to output just the first 10 lines
 grep "^Smp" Sm_PE_htseqcount.txt | head 
 
-# What we want here is to grep lines that start with Smp from a file, then sort the grep output, write this sorted output to a new file
+# What we want here is to take lines that start with Smp from a file, then sort the grep output, write this sorted output to a new file. (For our worm genome, each gene ID start with **Smp**. If you work with different species, the gene ID might look different. For example, human gene ID might look like **ENSG00000139618**)
 grep "^Smp" Sm_PE_htseqcount.txt | sort > final_counts/Sm_PE_htseqcount.final
-
-# Now try it yourself for the Sm_SE_sorted.bam file
-?????
 ```
 
-We should now have files containing the number of reads mapped to each gene within each demo samples. Next step, we will import read count data into R and run differential expression analysis. 
-
-We mapped and performed read counting for two example samples so far, the real samples have been done for you and are in a directory called  `v5counts`.
+We should now have files containing the number of reads mapped to each gene within each demo samples. Phew... that part could take a couple of days with full dataset, even on a hogh-performance computer. Next step, is your turn!! We will import actual read count data into R and run differential expression analysis. 
 
 ---
 [↥ **Back to top**](#top)
 
+## **Hands-on with differential expression analysis in R**
 
 ## Setting up RStudio <a name="Rprep"></a>
 We will move from Unix commands into R. We could run R on the Terminal, but more conveniently, we could run R on RStudio which provide graphical user interface and keep scripts and output neatly in one windows. 
