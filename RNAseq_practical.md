@@ -2,21 +2,23 @@
 
 ## Table of Contents
 1. [Overview and Aims](#intro)
-2. [Introduction to transcriptome and experiment design](#basic)
-3. [Mapping RNA-seq reads to a reference genome](#mapping)
-4. [Counting the number of reads mapped to each gene](#readcount)
-5. [Import data into RStudio](#Rprep)
-6. [Visualising overview of transcriptomic data in R](#pca)
-7. [Identifying differentially expressed genes](#de)
-8. [Exploring gene expression using gene plots and heatmaps](#plots)
-9. [Functional analysis using GO term enrichment](#go)
+2. [Mapping RNA-seq reads to a reference genome](#mapping)
+3. [Counting the number of reads mapped to each gene](#readcount)
+4. [Import data into RStudio](#Rprep)
+5. [Visualising overview of transcriptomic data in R](#pca)
+6. [Identifying differentially expressed genes](#de)
+7. [Exploring gene expression using gene plots and heatmaps](#plots)
+8. [Functional analysis using GO term enrichment](#go)
 
 ---
 
 ## Overview and Aims <a name="intro"></a>
 In this practical, We will start from raw data and work toward analysis of differentially expressed genes and functional analysis of gene lists. The example we will use come from Schistosoma mansoni which we have a good reference genome for (and downloadable from [Wormbase Parasite](https://parasite.wormbase.org/index.html), a favourite database for those working on parasitic worms. Note: if you work on human you may be interested in the [Ensembl](https://asia.ensembl.org/Homo_sapiens/Info/Index), or [Ensembl Bacteria](https://bacteria.ensembl.org/index.html)). 
 
-We will use data of S. mansoni from experimentally-infected mice that were collected at different days post-infection. We could ask if and how the worms at different stages are transcriptionally different and how those differences are related, or surprising, given the nature of the worms.
+#### Experiment description
+We will use data of S. mansoni from experimentally-infected mice that were collected at different time post-infection. These are worms from the lung stage (day 6 after the infection), the liver stage (day 13, 17, 21 after infection), and the adult stage (day 28 when they look like adults, and day 35 when the egg-laying has started and liver pathology can be noticable). Most groups have three biological replicates, except for the lung stage (day-6) where there are 7 biological replicates. Therefore we have 22 RNA samples, each has been sequenced on an Illumina HiSeq sequencing machine. All were sequenced as paired-end. 
+
+We could ask if and how the worms at different stages are transcriptionally different and how those differences are related, or surprising, given the nature of the worms. 
 
 At the end of this practical, you will have some experience in
 - mapping RNA-seq data to reference genome (I will demo this for you because the real process will take about 8 hours to complete, for just one sample.)
@@ -38,7 +40,7 @@ Mapping is a relatively straightforward step, and below are information that may
 Eukaryotic mRNAs are processed after transcription; introns are spliced out. Therefore some reads (those crossing exon boundaries) should be split when mapped to the reference genome sequence in which intron sequences are still present. TopHat and HISAT2 are one of few mappers which can split reads while mapping them, making it very suitable for mapping RNA-seq of a eukaryote. Splice-aware mapper first identify reads that map within a single exon and then identify splice junction on unmapped reads and map them across exon boundaries.
 
 ![](figures/splicedMapping.png)  
-**Figure 2.** How spliced mapping works (From https://galaxyproject.github.io/training-material/topics/transcriptomics/tutorials/ref-based/tutorial.html)
+**Figure 1.** How spliced mapping works (From https://galaxyproject.github.io/training-material/topics/transcriptomics/tutorials/ref-based/tutorial.html)
 
 #### Non-unique/repeated mapping regions
 A sequence read may map equally well to multiple locations in the reference genome. Different mapping algorithms have different strategies for this problem, so be sure to check the options in the mapper. Some difficult genome such as that of _Plasmodium falciparum_ has a low GC content (19% GC), which means that reads are more likely to map to multiple locations in the genome by chance. Reads from genes with tandem repeat domains may also encounter this situation. 
@@ -56,8 +58,6 @@ If you have a good quality genome and genome annotation such as for human, model
 New tools for mapping sequence reads are continually being developed. This reflects improvements in mapping technology, but it is also due to changes in the sequence data to be mapped. The sequencing machines we are using now will perhaps not be the ones we are using in a few years time, and the data the new machines produce may require different set of tools but some key concepts will remain relevant.
 
 ## Demo: RNA-seq read mapping
-#### Experiment description
-We will use data of S. mansoni from experimentally-infected mice that were collected at different time post-infection. These are worms from the lung stage (day 6 after the infection), the liver stage (day 13, 17, 21 after infection), and the adult stage (day 28 when they look like adults, and day 35 when the egg-laying has started and liver pathology can be noticable). Most groups have three biological replicates, except for the lung stage (day-6) where there are 7 biological replicates. Therefore we have 22 RNA samples, each has been sequenced on an Illumina HiSeq sequencing machine. All were sequenced as paired-end. 
 
 #### Mapping
 Mapping step generally need a huge computing power and often done on computer cluster or on Cloud. It can take a couple of hours per sample; therefore, for this demonstration, we provide files with reduced number of reads to reduce the processing time but you will still see how the run look like. We then provide output from the mapping that use the full dataset for the differential expression analysis in R. 
@@ -65,10 +65,10 @@ Mapping step generally need a huge computing power and often done on computer cl
 First, we will use HISAT2 (PMID: 25751142) to map RNA-seq data (in FASTQ format) to genome data (in FASTA format). HISAT2 is a mapper tool and is an upgraded software from the developer of TopHat. It is suitable for RNA-seq data as it also takes into account the splicing of exon-intron which is a characteristic of eukaryotic mRNA. 
 
 ![](figures/fastq.png)  
-**Figure 3.** FASTQ file
+**Figure 2.** FASTQ file
 
 ![](figures/fasta.png)  
-**Figure 4.** FASTA file
+**Figure 3.** FASTA file
 
 **Note:** For RNA-seq we can often get away without trimming reads before the mapping step. This is because contaminated reads or reads with low-quality would also have low mapping score and will be excluded during the read counting step. 
 
@@ -76,7 +76,7 @@ These steps will be done as a demo in the recorded clip.
 
 ```bash 
 # Go to the location of the reference genome
-cd /<path/to/my/data>/References_v5/
+cd /path/to/my/data/References_v5/
 
 # Unzip the reference genome file
 gunzip Sm_v5_genome.fa.gz
@@ -128,7 +128,7 @@ Now we have output from the mapping as BAM file. This explains where on the geno
 The file that contains annotated information of a genome is known as GFF (General Feature Format) or GTF (General Transfer Format) file. These are annotation files, with each line containing one feature and its related information. The information is displayed in tab-separated fields. Both file types contain similar information but formatting are slightly different (more details: http://m.ensembl.org/info/website/upload/gff.html). Some software can take either type as input. For software that asks for a specific type, they can be converted using a tool such as gffread.
 
 ![](figures/gtf.png)
-**Figure 5.** Example of a GTF file
+**Figure 4.** Example of a GTF file
 
 Use HTSeq-count to calculate the number of reads mapped to each gene
 See https://htseq.readthedocs.io/en/release_0.11.1/count.html or do `htseq-count --help` to see meaning of these options. The manual and `--help` option can also be useful if you encounter an error message.
@@ -170,17 +170,18 @@ grep "^Smp" Sm_PE_htseqcount.txt | head
 grep "^Smp" Sm_PE_htseqcount.txt | sort > final_counts/Sm_PE_htseqcount.final
 ```
 
-We should now have files containing the number of reads mapped to each gene within each demo samples. Phew... that part could take a couple of days with full dataset, even on a hogh-performance computer. Next step, is your turn!! We will import actual read count data into R and run differential expression analysis. 
+We should now have files containing the number of reads mapped to each gene within each demo samples. Phew... that part could take a couple of days with full dataset, even on a high-performance computer. 
+
+**Next step, is your turn!! We will import actual read count data into R and run differential expression analysis.**
 
 ---
 [↥ **Back to top**](#top)
 
 ## **Hands-on with differential expression analysis in R**
 
-## Setting up RStudio <a name="Rprep"></a>
-We will move from Unix commands into R. We could run R on the Terminal, but more conveniently, we could run R on RStudio which provide graphical user interface and keep scripts and output neatly in one windows. 
+### Setting up RStudio <a name="Rprep"></a>
 
-First, open RStudio and create a new R Script file (or RMarkdown file if you prefer). This will produce a blank file in the window on the top left. Save it to a meaningful name. While doing the analysis, we recommend typing, or copying, commands in this handbook into the R script area and then choose the line and run from there (using “Run” button next to the script area, or `Ctrl+Enter` shortcut key). This way we will have all the commands neatly stored in the script area which will make it easier to trace back, re-do, or edit if necessary. 
+First, open RStudio and create a new R Script file. This will produce a blank file in the window on the top left. Save it to a meaningful name. While doing the analysis, we recommend typing, or copying, commands in this manual into the R script area and then choose the line and run from there (using “Run” button next to the script area, or `Ctrl+Enter` shortcut key). This way we will have all the commands neatly stored in the script area which will make it easier to trace back, re-do, or edit if necessary. 
 
 While using RStudio, you can get help by typing command 
 - `?functioname` (function manual will appear on the Help section), 
@@ -189,33 +190,27 @@ While using RStudio, you can get help by typing command
 You can also find help online. If you Google your bioinformatics and R questions/struggles, it is amazing how someone had already asked that question and some answers had been provided. You might often find links to a forum on https://www.biostars.org/ or https://stackoverflow.com/. 
 
 ![](figures/RStudio.png)
-**Figure 6.** RStudio user interface
+**Figure 5.** RStudio user interface
 
 ### Prepare your R workspace
-The packages that we will load have previously been installed on the computer, and now we need to pull them, using `library()` command, into our current R environment. 
-
-**Note:** If you want to run this analysis on a different computer, you may need to first install the packages, but this task is often straightforward. R packages that we use are mainly from **Bioconductor** repository, or from **CRAN (The Comprehensive R Archive Network)**. 
-
-As an example, to install `topGO`, which is an R package on Bioconductor, we just need to follow few lines of commands from this page https://www.bioconductor.org/packages/release/bioc/html/topGO.html. To install a package from CRAN, such as `ggplot2`, we use command `install.packages("ggplot2")`.
-
-Let's get your R workspace set up
+First we need to install some of the R packages that we need. R packages that we use are mainly from **Bioconductor** repository, or from **CRAN (The Comprehensive R Archive Network)**.
 
 ```R
-# Set up work directory
-# setwd command set working directory for the current R session. After running this line, if we import or export files without defining a specific directory, R will assume the current working directory as your destination.
-# the path to your data is considered a "string" or "character" in R, so we need to put it inside a quotation mark
-setwd("/<path/to/data>/Module_7_Transcriptomics/")
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
 
-# To keep our filing system tidy, let's create a new directory to keep outputs from R analysis
-dir.create("R_analysis")
+BiocManager::install("DESeq2") # https://bioconductor.org/packages/release/bioc/html/DESeq2.html
+BiocManager::install("topGO") # https://bioconductor.org/packages/release/bioc/html/topGO.html
 
-# You can check on your Terminal or in File that a new directory called "R_analysis" has been created.
+install.packages("ggplot2") # https://ggplot2.tidyverse.org/
+install.packages("pheatmap") # https://www.rdocumentation.org/packages/pheatmap/versions/1.0.12/topics/pheatmap
+install.packages("RColorBrewer") # https://cran.r-project.org/web/packages/RColorBrewer/index.html
 
-# Enter the directory R_analysis that you just created
-setwd("./R_analysis")
+# NOTE: last month (end of 2022), the Bioconductor behaved strangely with Mac OS, and we were unable to download packages. If you encounter an issue today, please let us know. 
 
-# Load required packages into R environment 
+# If the previous steps are successful, the required packages are now in your computer. Next, we load them into the current R environment.
 # R comes with standard packages (i.e. set of tools). We use library command to load additional tools that we need for RNA-seq data analysis
+
 library(DESeq2)   		# for doing expression analysis
 library(topGO)    		# for running GO term enrichment
 library(ggplot2)  		# for (visually pleasing) plots
@@ -223,19 +218,35 @@ library(pheatmap) 		# for (visually pleasing) heatmaps
 library(RColorBrewer) 	# for a wider range of plot colours
 ```
 
+Let's get your R workspace set up
+
+```R
+# Set up work directory
+# setwd command set working directory for the current R session. After running this line, if we import or export files without defining a specific directory, R will assume the current working directory as your destination.
+
+# the path to your data is considered a "string" or "character" in R, so we need to put it inside a quotation mark
+setwd("/path/to/data/SB4_practice_dataset/")
+
+# To keep our filing system tidy, let's create a new directory to keep outputs from R analysis
+dir.create("R_analysis")
+
+# You can check on your computer that a new directory called "R_analysis" has been created.
+
+# Enter the directory R_analysis that you just created
+setwd("./R_analysis")
+
+```
+
 ### About DESeq2
 This is an R package for performing differential expression analysis (PMID: 25516281). It can take read count data in various forms, one of those is read count tables from HTSeq-count. The tool provides simple command lines for formatting read count data, normalization, exploring variances between samples, and performing differential expression analysis. It is one of the tools widely used for RNA-seq data analysis and it also provide detailed manual which help make it more user-friendly (http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html)
-
-### Alternative softwares
-In addition to `DESeq2`, there are a variety of programs for detecting differentially expressed genes from tables of RNA-seq read counts. Some of these tools work in R, while some require Unix interface. Examples of these tools include EdgeR (PMID: 19910308), BaySeq (PMID: 20698981), Cuffdiff (PMID: 23222703), Sleuth PMID: 28581496 (an accompanying tool for read count data from Kallisto).
 
 ## Import read count data into R
 We will tell R where the read count data are kept, and then create a table with metadata of our samples. The format of the metadata table will change with the tools that you use. What is demonstrated here is for DESeq2.
 
 ```R
 # Tell the location of the read count files
-# Create a datadir object to keep the path to the directory v5counts in your module 7 files
-datadir <- "/<path/to/data>/v5counts/" 
+# Create a datadir object to keep the path to the directory SB4_practice_dataset
+datadir <- "/full/path/to/data/SB4_practice_dataset/" 
 
 # list files in this directory, output as an R vector
 list.files(datadir)   # this should list 22 files
@@ -260,6 +271,7 @@ Next, we will use the metadata to create an object in R that DESeq2 can use
 ```R
 # Create DESeq2 object from read count files and sample metadata information 
 # design =~ condition indicates which variable(s) in sampleTable represent experimental design. In this case, it is the condition column.
+
 ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable, directory = datadir, design =~ condition)
 
 # Apply normalization and statistical model to the read count data 
@@ -297,7 +309,7 @@ plotPCA(rld, intgroup = c("condition"))
 
 You should get something similar to this. 
 ![](figures/pca.png)
-**Figure 7.** PCA plot
+**Figure 6.** PCA plot
 
 Save the plot to PDF file using `dev.copy()` function. `dev` mean device, and this refers to the plotting space in your RStudio, as well as a new "device" that is opened as a new file on your computer. Once the plotting to a new "device" is done, we must do `dev.off()` to close the device so that the plot can be viewed. 
 
@@ -367,7 +379,7 @@ theme(text = element_text(size = 15))
 ```
 
 ![](figures/ggplotpca.png)
-**Figure 8.** PCA plot produced by ggplot2
+**Figure 7.** PCA plot produced by ggplot2
 
 ---
 ### Mini exercise
@@ -402,7 +414,7 @@ pheatmap(sampleDistMatrix, clustering_distance_rows = sampleDist, clustering_dis
 
 This should output a plot similar to one below
 ![](figures/sampleheatmap.png)
-**Figure 9.** Sample heatmap
+**Figure 8.** Sample heatmap
 
 ```R
 # Save the plot to a PDF file
@@ -437,7 +449,7 @@ The result table contains several columns, of which the most relevant are:
 - Column 6: padj, adjusted p-value, p-value corrected for multiple testing
 
 ![](figures/deseqres.png)
-**Figure 10.** Example of DESeq2 result table
+**Figure 9.** Example of DESeq2 result table
 
 ### Log2 fold change
 Fold change is calculated from a ratio of normalised read counts between two conditions of interest. However, level of gene expression changes are often shown as log2 fold change. Using log2 value become particularly helpful for visualising the gene expression changes. Furthermore, it eventually become intuitive that log2FC of 1 means expression level double in a given condition, and a negative log2FC means the gene is down-regulated in a given condition. 
@@ -470,14 +482,14 @@ res_D13D06[which(res_D13D06$log2FoldChange > 1 & res_D13D06$padj < 0.01),]
 ```
 
 ---
-### Exercise 7.2
+### Exercise 1
 Look at the result of differential gene expression analysis between day-13 and day-6 worms. 
 
 1) How many genes are up-regulated in day-13 worms compared to day-6 worms?
 
 2) How many genes are up-regulated in day-6 worms? 
 
-3) Try using WormbaseParasite to explore some of the top differentially expressed genes ranked by log2FC.
+3) Try using WormbaseParasite (https://parasite.wormbase.org/index.html) to explore some of the top differentially expressed genes ranked by log2FC.
 
 ---
 
@@ -504,7 +516,7 @@ abline(h = c(-1,1))
 ```
 
 ![](figures/maPlot.png)
-**Figure 11.** MA plot
+**Figure 10.** MA plot
 
 **Volcano plot**
 
@@ -529,7 +541,7 @@ ggtitle("D13 VS D06")
 ```
 
 ![](figures/volcano.png)
-**Figure 12.** Volcano plot
+**Figure 11.** Volcano plot
 
 **Individual plot for a gene**
 
@@ -548,7 +560,7 @@ ggtitle("Smp_022450.2")
 ```
 
 ![](figures/genePlot.png)
-**Figure 13.** Gene plot
+**Figure 12.** Gene plot
 
 **Gene heatmap**
 We may want to look at expression profiles of multiple genes at the same time. Heatmaps can be useful for this purpose; it essentially help turn a table of numbers into a mode visual form and it is versatile. The table could be normalised counts of top differentially expressed genes in a given comparison, or it could be genes known to be involved in a specific pathway, or it can be log2FC values instead of read counts. Previously, we use heatmap to visualise matrix of distances between each samples. 
@@ -575,7 +587,7 @@ pheatmap(rld_res_D13D06_top20_genes)
 ```
 
 ![](figures/geneheatmap1.png)
-**Figure 14.** Heatmap - default setting
+**Figure 13.** Heatmap - default setting
 
 The default plot look quite messy. The rows are annotated with gene IDs, and their writing overlap due to limited space. The column annotations are also long and contain excess information. 
 
@@ -604,7 +616,7 @@ main = "Top 20 DE genes: day-13 / day-6")
 **Figure 15.** Heatmap - customised
 
 ---
-### Exercise 7.3
+### Exercise 2
 
 1) Compare volcano plot or MA plot of D13vsD06 and D17vsD13 worms. What do you notice about the range of log2FC and adjusted p-values? It might be more informative to show plots from both comparison on the same axis ranges. Try using `ylim()` and `xlim()` argument to set the range of x and y axes. 
 
@@ -640,7 +652,7 @@ Running topGO take a couple of steps (see topGO documentation here https://bioco
 
 ```R
 # Load the R wrapper script for running topGO
-source("/<path to data>/Module_7_Transcriptomics/run_topGO.R")
+source("/path/to/data/SB4_run_topGO.R")
 
 # Collect ID of genes that were up-regulated in D13 (pass cut-off of padj < 0.01 and log2FC > 1)
 D13D06_upinD13 <- rownames(res_D13D06)[which(res_D13D06$padj < 0.01 & res_D13D06$log2FoldChange > 1)]
@@ -653,7 +665,7 @@ length(D13D06_upinD13)
 # - reference GO annotation (GO terms associated with each gene)
 # - list of genes to test for GO enrichment
 # - threshold for calling “significant” enrichment
-topGO_D13D06_upinD13  <- run_topGO_R(ref = "/<path to data>/Module_7_Transcriptomics/References_v5/Sm_v5_GOref_topGO.txt", genelist = D13D06_upinD13, thres = 0.05)
+topGO_D13D06_upinD13  <- run_topGO_R(ref = "/path/to/data/SB4_Sm_v5_GOref_topGO.txt", genelist = D13D06_upinD13, thres = 0.05)
 
 # Check topGO result. Column 1 to 7 are standard topGO output; column 8 give a list of input genes with that GO term. We won’t look at that at the moment. 
 topGO_D13D06_upinD13[,1:7]
@@ -663,7 +675,7 @@ topGO_D13D06_upinD13[,1:7]
 **Figure 16.** Example of topGO result
 
 ---
-### Exercise 7.4
+### Exercise 3
 
 1) Run topGO using genes that were up-regulated in day-6 worms, compared to day-13 worms ()
 
