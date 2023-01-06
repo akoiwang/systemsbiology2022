@@ -250,7 +250,7 @@ datadir <- "/full/path/to/data/SB4_practice_dataset/"
 
 # list files in this directory, output as an R vector
 list.files(datadir)   # this should list 22 files
-sampleFiles <- list.files(datadir)    # this save that 22 file names into a new R object		
+sampleFiles <- list.files(datadir, pattern = ".counts")    # this save that 22 file names into a new R object		
 
 # Create sample names
 # split the name at “_v5.counts” and keep the resulting output in a new vector
